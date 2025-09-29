@@ -192,7 +192,7 @@ class _MenuScreenState extends State<MenuScreen> {
                       context,
                       icon: Icons.chat_bubble_outline,
                       title: "Chatbot AI",
-                      subtitle: "Hỏi đáp mọi câu hỏi về luật giao thông",
+                      subtitle: "Hỏi đáp mọi câu hỏi ",
                       colors: const [Color(0xFFB08FCA), Color(0xFFCFB5E4)],
                       onTap: () => Navigator.pushNamed(context, '/chatbot',
                           arguments: {'user': user}),
