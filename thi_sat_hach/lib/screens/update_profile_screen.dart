@@ -77,6 +77,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         "fullname": fullname,
         "email": email,
         "avatar": _selectedAvatar,
+        // Giữ lại các trường khác (ví dụ: username)
+        "username": _user!['username'],
       };
 
       final rows = await DBHelper.instance.update(
@@ -91,6 +93,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("✅ Cập nhật thành công")),
           );
+          // TRẢ VỀ TOÀN BỘ DỮ LIỆU ĐÃ CẬP NHẬT
           Navigator.pop(context, {
             ..._user!,
             ...updatedData,
@@ -200,6 +203,35 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     );
   }
 
+  // Hàm helper để xác định Widget Avatar cần hiển thị
+  Widget _getAvatarWidget(String? avatarPath) {
+    if (avatarPath != null) {
+      final file = File(avatarPath);
+      // Kiểm tra nếu đó là file từ gallery (đường dẫn tuyệt đối)
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          width: 100,
+          height: 100,
+          fit: BoxFit.cover,
+        );
+      }
+      // Nếu là tên asset
+      else if (avatarPath.endsWith('.png') || avatarPath.endsWith('.jpg')) {
+        return Image.asset(
+          "assets/img/$avatarPath",
+          width: 100,
+          height: 100,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(Icons.person, size: 50, color: Colors.grey);
+          },
+        );
+      }
+    }
+    return const Icon(Icons.person, size: 50, color: Colors.grey);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -210,31 +242,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       );
     }
 
-    // Kiểm tra xem _selectedAvatar có phải là một đường dẫn file hay không
-    Widget avatarWidget;
-    if (_selectedAvatar != null) {
-      final file = File(_selectedAvatar!);
-      if (file.existsSync()) {
-        avatarWidget = Image.file(
-          file,
-          width: 100,
-          height: 100,
-          fit: BoxFit.cover,
-        );
-      } else {
-        avatarWidget = Image.asset(
-          "assets/img/$_selectedAvatar",
-          width: 100,
-          height: 100,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.person, size: 50, color: Colors.grey);
-          },
-        );
-      }
-    } else {
-      avatarWidget = const Icon(Icons.person, size: 50, color: Colors.grey);
-    }
+    final avatarWidget = _getAvatarWidget(_selectedAvatar);
 
     return Scaffold(
       appBar: AppBar(

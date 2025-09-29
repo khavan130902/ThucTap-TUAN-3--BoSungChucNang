@@ -6,7 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
 class PracticeHistoryScreen extends StatefulWidget {
-  final Map<String, dynamic> user;
+  final Map<String, dynamic> user; // thông tin user đăng nhập
   const PracticeHistoryScreen({super.key, required this.user});
 
   @override
@@ -14,12 +14,12 @@ class PracticeHistoryScreen extends StatefulWidget {
 }
 
 class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
-  List<Map<String, dynamic>> _history = [];
-  int passCount = 0;
-  int failCount = 0;
-  bool _loading = true;
+  List<Map<String, dynamic>> _history = []; // danh sách lịch sử thi
+  int passCount = 0; // số lần đậu
+  int failCount = 0; // số lần rớt
+  bool _loading = true; // trạng thái loading
 
-  // 🎨 Màu pastel
+  // 🎨 màu pastel để giao diện dịu mắt
   final Color pastelGreen = const Color(0xFF85DF90);
   final Color pastelOrange = const Color(0xFFEDA371);
   final Color pastelBlue = const Color(0xFF8FC2EC);
@@ -27,12 +27,16 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+    _loadHistory(); // khi mở màn hình thì load lịch sử thi
   }
 
+  /// Hàm lấy lịch sử thi từ DB
   Future<void> _loadHistory() async {
     try {
+      // Lấy dữ liệu lịch sử thi của user hiện tại
       final data = await DBHelper.instance.getExamHistory(widget.user['id']);
+
+      // Sắp xếp theo thời gian giảm dần (mới nhất trước)
       data.sort((a, b) => (b['created_at'] ?? '')
           .toString()
           .compareTo((a['created_at'] ?? '').toString()));
@@ -40,6 +44,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
       int pass = 0;
       int fail = 0;
 
+      // Đếm số lần đậu/rớt dựa trên 80% số câu đúng
       for (var row in data) {
         final correct = row['score'] as int? ?? 0;
         final total = row['total'] as int? ?? 1;
@@ -50,6 +55,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
         }
       }
 
+      // Cập nhật state
       setState(() {
         _history = data;
         passCount = pass;
@@ -65,6 +71,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
     }
   }
 
+  /// Định dạng ngày giờ
   String _formatDate(String raw) {
     try {
       final dt = DateTime.parse(raw);
@@ -87,6 +94,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
         foregroundColor: Colors.white,
       ),
       body: Container(
+        // nền gradient xanh -> trắng
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -106,7 +114,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ✅ Tổng quan nhanh
+              // 🔹 Thống kê nhanh (tổng số lần, số đậu, số rớt, tỷ lệ đậu)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -121,7 +129,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
                     _statItem("Số lần đậu", passCount.toString(),
                         Icons.check_circle, pastelGreen),
                     _statItem("Số lần rớt", failCount.toString(),
-                        Icons.cancel, const Color(0xFFDD3434)), // ✅ Thêm chỉ số rớt
+                        Icons.cancel, const Color(0xFFDD3434)),
                     _statItem("Tỷ lệ đậu", "$passRate%",
                         Icons.leaderboard, pastelOrange),
                   ],
@@ -129,7 +137,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ✅ Danh sách chi tiết
+              // 🔹 Danh sách chi tiết từng lần thi
               const Text(
                 "📚 Chi tiết các lần thi",
                 style: TextStyle(
@@ -149,18 +157,22 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
                     color: isPass
                         ? pastelGreen.withOpacity(0.3)
                         : pastelOrange.withOpacity(0.3),
-                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    margin:
+                    const EdgeInsets.symmetric(vertical: 6),
                     child: ListTile(
                       title: Text(
                           "📅 Ngày: ${_formatDate(item['created_at'] ?? "")}"),
                       subtitle: Text(
                           "Kết quả: $correct / $total (${(total > 0 ? correct / total * 100 : 0).toStringAsFixed(1)}%)"),
                       trailing: Icon(
-                        isPass ? Icons.check_circle : Icons.cancel,
+                        isPass
+                            ? Icons.check_circle
+                            : Icons.cancel,
                         color: isPass
                             ? const Color(0xFF77DD77)
                             : const Color(0xFFDD3434),
                       ),
+                      // 👉 Nhấn vào 1 lần thi -> đi tới màn hình chi tiết
                       onTap: () {
                         Navigator.push(
                           context,
@@ -184,6 +196,7 @@ class _PracticeHistoryScreenState extends State<PracticeHistoryScreen> {
     );
   }
 
+  /// Widget hiển thị 1 mục thống kê (icon + số + tên)
   Widget _statItem(String title, String value, IconData icon, Color color) {
     return Column(
       children: [

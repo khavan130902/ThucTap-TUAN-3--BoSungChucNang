@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // 💡 IMPORT MỚI
 import 'db_helper.dart';
 
-// Screens
+// Screens (Giả định các file này tồn tại)
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/topic_screen.dart';
@@ -15,9 +16,18 @@ import 'screens/practice_result_screen.dart';
 import 'screens/practice_review_screen.dart';
 import 'screens/menu_screen.dart';
 import 'screens/practice_history_screen.dart';
+import 'screens/chat_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 💡 BƯỚC KHẮC PHỤC QUAN TRỌNG: Tải file .env trước khi chạy app
+  try {
+    await dotenv.load(fileName: ".env");
+    debugPrint("✅ Đã tải file .env thành công.");
+  } catch (e) {
+    debugPrint('⚠️ Lỗi tải file .env: $e');
+  }
 
   bool needReset = false;
 
@@ -104,8 +114,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        // Chuyển menu thành route tĩnh
         '/menu': (context) => const MenuScreen(),
+        '/chatbot': (context) => const ChatScreen(),
       },
 
       // 📍 Route động

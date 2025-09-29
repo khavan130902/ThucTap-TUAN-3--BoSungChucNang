@@ -1,6 +1,5 @@
-// Thay thế toàn bộ nội dung file menu_screen.dart bằng code dưới đây
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'dart:io'; // Cần thiết để kiểm tra và hiển thị ảnh từ đường dẫn file
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
@@ -10,239 +9,207 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  // Biến để lưu trữ thông tin người dùng
+  // Màu sắc cố định
+  static const Color primaryTeal = Color(0xFFA7E5CE);
+  static const Color primaryPeach = Color(0xFFF4D2B6);
+
   Map<String, dynamic>? _user;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Lấy đối số khi màn hình được tạo lần đầu
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    _user = args?['user'];
-  }
-
-  // Hàm để cập nhật thông tin người dùng từ đối số trả về
-  void _updateUser(Map<String, dynamic>? updatedUser) {
-    if (updatedUser != null && mounted) {
-      setState(() {
-        _user = updatedUser;
-      });
+    // Khởi tạo _user từ arguments, chỉ chạy lần đầu
+    if (_user == null) {
+      final args =
+      ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      _user = args?['user'];
     }
   }
 
-  // Phương thức để kiểm tra và trả về widget avatar phù hợp
-  Widget _getAvatarWidget(String? avatarPath) {
-    if (avatarPath != null && avatarPath.isNotEmpty) {
-      if (avatarPath.startsWith('avatar') && avatarPath.endsWith('.png')) {
-        // Đây là avatar mặc định từ assets
-        return Image.asset(
-          "assets/img/$avatarPath",
-          width: 56,
-          height: 56,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.person, size: 32, color: Color(0xFF388E3C));
-          },
-        );
-      } else {
-        // Đây là avatar được chọn từ thư viện, là một đường dẫn file
-        final file = File(avatarPath);
-        if (file.existsSync()) {
-          return Image.file(
-            file,
-            width: 56,
-            height: 56,
-            fit: BoxFit.cover,
-          );
-        }
-      }
-    }
-    // Trường hợp không có avatar hoặc lỗi
-    return const Icon(Icons.person, size: 32, color: Color(0xFF388E3C));
-  }
-
-  // Hàm điều hướng đến trang hồ sơ và chờ kết quả trả về
+  // Hàm xử lý việc điều hướng đến màn hình Hồ sơ và chờ kết quả cập nhật
   Future<void> _navigateToProfile() async {
+    // Chờ kết quả (updatedUser) trả về từ màn hình Profile
     final updatedUser = await Navigator.pushNamed(
       context,
-      '/profile',
+      '/profile', // Giả sử /profile sẽ dẫn đến UpdateProfileScreen
       arguments: {'user': _user},
     );
-    _updateUser(updatedUser as Map<String, dynamic>?);
+
+    // Nếu có dữ liệu mới trả về (người dùng đã lưu thay đổi)
+    if (updatedUser != null && updatedUser is Map<String, dynamic>) {
+      setState(() {
+        _user = updatedUser; // Cập nhật trạng thái người dùng
+      });
+      if (mounted) {
+        // Thông báo cho người dùng
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Thông tin hồ sơ đã được cập nhật.")),
+        );
+      }
+    }
+  }
+
+  // Hàm xây dựng Widget Avatar, xử lý cả File Path và Asset
+  Widget _buildAvatarWidget(String? avatarPath) {
+    if (avatarPath != null) {
+      final file = File(avatarPath);
+      // 1. Nếu avatar là một đường dẫn file hợp lệ (ảnh chọn từ thư viện)
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          width: 64, // Bán kính * 2
+          height: 64,
+          fit: BoxFit.cover,
+        );
+      }
+      // 2. Nếu avatar là tên asset (ảnh có sẵn)
+      else if (avatarPath.endsWith('.png')) { // Giả định asset có đuôi .png
+        return Image.asset(
+          "assets/img/$avatarPath",
+          width: 64,
+          height: 64,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            // Fallback nếu không tìm thấy asset
+            return const Icon(Icons.person, size: 36, color: Color(0xFF203a43));
+          },
+        );
+      }
+    }
+    // 3. Avatar mặc định (Placeholder)
+    return const Icon(Icons.person, size: 36, color: Color(0xFF203a43));
   }
 
   @override
   Widget build(BuildContext context) {
-    // Sử dụng _user để đảm bảo UI được cập nhật
-    final user = _user;
+    final user = _user; // Dùng state variable
+    final username = user?['username'] ?? "Người dùng";
+    final avatarPath = user?['avatar'];
+    // final isUserLoggedIn = user != null; // Không cần thiết
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("THI SÁT HẠCH B2", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "THI SÁT HẠCH B2",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.5,
+            fontSize: 20,
+          ),
+        ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: const Color(0xFFA8E6CF),
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
       ),
       body: Container(
         decoration: const BoxDecoration(
+          // Gradient nhẹ nhàng hơn
           gradient: LinearGradient(
-            colors: [
-              Color(0xFFA8E6CF),
-              Color(0xFFFFD3B6),
-            ],
+            colors: [primaryTeal, primaryPeach], // Light blue/cyan gradient
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         child: SafeArea(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (user != null)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // ✅ Bọc CircleAvatar bằng GestureDetector
-                      GestureDetector(
-                        onTap: _navigateToProfile,
-                        child: CircleAvatar(
-                          radius: 28,
-                          backgroundColor: Colors.white,
-                          child: ClipOval(
-                            child: _getAvatarWidget(user['avatar']?.toString()),
+              // --- Phần User Info ---
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    // Avatar đã được cập nhật
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: Colors.white,
+                      child: ClipOval(
+                        child: _buildAvatarWidget(avatarPath),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          username,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0f2027), // Màu chữ đậm hơn
+                            letterSpacing: 0.5,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user['username'] ?? "Người dùng",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF000000),
-                            ),
-                          ),
-                          const Text(
-                            "Chào mừng bạn quay lại!",
-                            style: TextStyle(color: Colors.black54, fontSize: 14),
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
-                ),
-
-              const SizedBox(height: 5),
-
-              // 👉 Bố cục menu dạng cột với các Card lớnmenu_screen
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      _menuListCard(
-                        context,
-                        icon: Icons.book,
-                        title: "Ôn Thi",
-                        subtitle: "Học 600 câu hỏi lý thuyết",
-                        color1: const Color(0xFFFFB347),
-                        color2: const Color(0xFFFFD3B6),
-                        onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            '/topics',
-                            arguments: {'user': user},
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      _menuListCard(
-                        context,
-                        icon: Icons.quiz,
-                        title: "Thi Thử",
-                        subtitle: "Thi đề ngẫu nhiên",
-                        color1: const Color(0xFF77DD77),
-                        color2: const Color(0xFFA8E6CF),
-                        onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            '/practice',
-                            arguments: {'user': user},
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      _menuListCard(
-                        context,
-                        icon: Icons.history,
-                        title: "Lịch Sử Thi",
-                        subtitle: "Xem lại kết quả và thống kê",
-                        color1: const Color(0xFF84B6F4),
-                        color2: const Color(0xFFB5EAD7),
-                        onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            '/history',
-                            arguments: {'user': user},
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      // Chức năng hồ sơ đã được thay thế bằng _navigateToProfile ở avatar
-                      _menuListCard(
-                        context,
-                        icon: Icons.person,
-                        title: "Hồ Sơ Tài Khoản",
-                        subtitle: "Quản lý thông tin cá nhân",
-                        color1: const Color(0xFFFFC1CC),
-                        color2: const Color(0xFFFFE0E6),
-                        onTap: _navigateToProfile,
-                      ),
-                    ],
-                  ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          "Chào mừng bạn quay lại!",
+                          style: TextStyle(
+                              color: Color(0xFF203a43), fontSize: 15),
+                        ),
+                      ],
+                    )
+                  ],
                 ),
               ),
 
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 6,
-                        offset: Offset(2, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Row(
-                        children: [
-                          Icon(Icons.info, color: Colors.teal),
-                          SizedBox(width: 8),
-                          Text(
-                            "Lợi ích của ứng dụng",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text("• Học và ôn tập toàn bộ 600 câu hỏi."),
-                      Text("• Thi thử với bộ đề ngẫu nhiên như thi thật."),
-                      Text("• Hỗ trợ ôn tập các câu hỏi điểm liệt."),
-                    ],
-                  ),
+              // --- Phần Menu Cards (ListView) ---
+              Expanded(
+                child: ListView(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  children: [
+                    _buildMenuCard(
+                      context,
+                      icon: Icons.book,
+                      title: "Ôn Thi",
+                      subtitle: "Học 600 câu hỏi lý thuyết",
+                      colors: const [Color(0xFFFCB34E), Color(0xFFFCD0B0)],
+                      onTap: () => Navigator.pushNamed(context, '/topics',
+                          arguments: {'user': user}),
+                    ),
+                    _buildMenuCard(
+                      context,
+                      icon: Icons.quiz,
+                      title: "Thi Thử",
+                      subtitle: "Thi với bộ đề ngẫu nhiên như thi thật",
+                      colors: const [Color(0xFF78DC7B), Color(0xFFA3E4C8)],
+                      onTap: () => Navigator.pushNamed(context, '/practice',
+                          arguments: {'user': user}),
+                    ),
+                    _buildMenuCard(
+                      context,
+                      icon: Icons.history,
+                      title: "Lịch Sử Thi",
+                      subtitle: "Xem lại kết quả và thống kê",
+                      colors: const [Color(0xFF86B8EF), Color(0xFFB1E5D7)],
+                      onTap: () => Navigator.pushNamed(context, '/history',
+                          arguments: {'user': user}),
+                    ),
+                    // Thẻ Chatbot AI mới
+                    _buildMenuCard(
+                      context,
+                      icon: Icons.chat_bubble_outline,
+                      title: "Chatbot AI",
+                      subtitle: "Hỏi đáp mọi câu hỏi về luật giao thông",
+                      colors: const [Color(0xFFB08FCA), Color(0xFFCFB5E4)],
+                      onTap: () => Navigator.pushNamed(context, '/chatbot',
+                          arguments: {'user': user}),
+                    ),
+                    // Gọi hàm mới để chờ kết quả cập nhật
+                    _buildMenuCard(
+                      context,
+                      icon: Icons.person,
+                      title: "Hồ Sơ Tài Khoản",
+                      subtitle: "Quản lý thông tin cá nhân",
+                      colors: const [Color(0xFFFCC1CC), Color(0xFFFCDDE3)],
+                      onTap: _navigateToProfile,
+                    ),
+                    const SizedBox(height: 20),
+                    // --- Lợi ích của ứng dụng ---
+                    _buildBenefitsSection(),
+                  ],
                 ),
               ),
             ],
@@ -252,114 +219,133 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
-  Widget _menuCard(
+  // Widget Thẻ menu full-width theo thiết kế mới
+  Widget _buildMenuCard(
       BuildContext context, {
         required IconData icon,
         required String title,
-        required Color color1,
-        required Color color2,
+        required String subtitle,
+        required List<Color> colors,
         required VoidCallback onTap,
       }) {
-    // Hàm này không còn được sử dụng
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color1, color2],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 6,
-              offset: Offset(2, 4),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: colors,
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 48, color: Colors.white),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: colors.last.withOpacity(0.4),
+                blurRadius: 10,
+                spreadRadius: 1,
+                offset: const Offset(0, 4),
               ),
-            )
-          ],
+            ],
+          ),
+          child: Row(
+            children: [
+              // Icon lớn bên trái
+              Icon(icon, size: 40, color: Colors.white),
+              const SizedBox(width: 16),
+              // Tiêu đề và mô tả
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Mũi tên > (tùy chọn)
+              const Icon(Icons.arrow_forward_ios, size: 20, color: Colors.white70),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _menuListCard(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required String subtitle,
-        required Color color1,
-        required Color color2,
-        required VoidCallback onTap,
-      }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color1, color2],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+  // Widget Lợi ích của ứng dụng
+  Widget _buildBenefitsSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 6,
-              offset: Offset(2, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                shape: BoxShape.circle,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                "Lợi ích của ứng dụng",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue.shade600,
+                ),
               ),
-              child: Icon(icon, size: 36, color: Colors.white),
+            ],
+          ),
+          const Divider(height: 16, thickness: 1, color: Colors.black12),
+          _buildBenefitItem("Học và ôn tập toàn bộ 600 câu hỏi."),
+          _buildBenefitItem("Thi thử với bộ đề ngẫu nhiên như thi thật."),
+          _buildBenefitItem("Hỗ trợ ôn tập các câu hỏi điểm liệt."),
+        ],
+      ),
+    );
+  }
+
+  // Widget item lợi ích
+  Widget _buildBenefitItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("•", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
             ),
-            const SizedBox(width: 20),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

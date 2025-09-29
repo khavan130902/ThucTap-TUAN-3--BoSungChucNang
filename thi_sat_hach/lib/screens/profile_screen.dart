@@ -1,4 +1,3 @@
-// Thay thế nội dung file profile_screen.dart bằng code dưới đây
 import 'package:flutter/material.dart';
 import 'dart:io';
 
