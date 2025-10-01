@@ -181,7 +181,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
           color: bg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: selected ? const Color(0xFF7EB7F1) : Colors.grey.shade300, width: 1.5),
+              color: selected ? const Color(0xFF7EB7F1) : Colors.grey.shade300,
+              width: 1.5),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.1),
@@ -201,7 +202,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 color: selected ? const Color(0xFF7EB7F1) : Colors.grey.shade400,
                 shape: BoxShape.circle,
               ),
-              child: Text(key, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text(key,
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(width: 16),
             Expanded(child: Text(text, style: const TextStyle(fontSize: 16))),
@@ -225,9 +228,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.access_time_filled,
-                      color: const Color(0xFF7EB7F1),
+                      color: Color(0xFF7EB7F1),
                       size: 24,
                     ),
                     const SizedBox(width: 10),
@@ -288,7 +291,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
               decoration: BoxDecoration(
                 color: isCurrent
                     ? const Color(0xFF7EB7F1)
-                    : (selected ? const Color(0xFF6FE498) : Colors.grey.shade300),
+                    : (selected
+                    ? const Color(0xFFFDBF76)
+                    : Colors.white),
                 shape: BoxShape.circle,
               ),
               child: Text(
@@ -315,13 +320,16 @@ class _PracticeScreenState extends State<PracticeScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF84DE8F),
-        title: const Text("Thi thử", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text("Thi thử",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         actions: [
           IconButton(
             icon: Icon(
-              _isGridVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              _isGridVisible
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
               color: Colors.white,
             ),
             onPressed: () {
@@ -355,7 +363,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 _buildProgressCard(),
                 if (_isGridVisible) ...[
                   _buildQuestionGrid(),
-                  const Divider(thickness: 1, height: 1, indent: 16, endIndent: 16),
+                  const Divider(
+                      thickness: 1, height: 1, indent: 16, endIndent: 16),
                 ],
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -364,7 +373,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     children: [
                       Text("Câu ${_current + 1}/${_questions.length}",
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF222121))),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Color(0xFF222121))),
                       const SizedBox(height: 12),
                       Card(
                         shape: RoundedRectangleBorder(
@@ -382,12 +393,15 @@ class _PracticeScreenState extends State<PracticeScreen> {
                                     .isNotEmpty ==
                                     true)
                                     ? _questions[_current]['content']
-                                    : (_questions[_current]['title'] ?? "Nội dung câu hỏi"),
-                                style: const TextStyle(fontSize: 18, height: 1.5),
+                                    : (_questions[_current]['title'] ??
+                                    "Nội dung câu hỏi"),
+                                style: const TextStyle(
+                                    fontSize: 18, height: 1.5),
                               ),
                               const SizedBox(height: 16),
                               Builder(builder: (_) {
-                                String mediaFile = normalizeFileName(_questions[_current]['audio']);
+                                String mediaFile = normalizeFileName(
+                                    _questions[_current]['audio']);
                                 if (mediaFile.isEmpty) return const SizedBox();
                                 if (isImageFile(mediaFile)) {
                                   return ClipRRect(
@@ -395,15 +409,22 @@ class _PracticeScreenState extends State<PracticeScreen> {
                                     child: Image.asset(
                                       "assets/img/$mediaFile",
                                       fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) {
+                                      errorBuilder: (context, error,
+                                          stackTrace) {
                                         return Container(
                                           padding: const EdgeInsets.all(12),
                                           color: Colors.red.shade50,
                                           child: const Row(
                                             children: [
-                                              Icon(Icons.error_outline, color: Colors.red),
+                                              Icon(Icons.error_outline,
+                                                  color: Colors.red),
                                               SizedBox(width: 8),
-                                              Text("Không tải được ảnh", style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic)),
+                                              Text(
+                                                  "Không tải được ảnh",
+                                                  style: TextStyle(
+                                                      color: Colors.red,
+                                                      fontStyle:
+                                                      FontStyle.italic)),
                                             ],
                                           ),
                                         );
@@ -414,15 +435,22 @@ class _PracticeScreenState extends State<PracticeScreen> {
                                   return Row(
                                     children: [
                                       IconButton(
-                                        icon: const Icon(Icons.volume_up, color: Color(
-                                            0xFFC0C1C7), size: 30),
+                                        icon: const Icon(Icons.volume_up,
+                                            color: Color(0xFFC0C1C7),
+                                            size: 30),
                                         onPressed: () {
-                                          debugPrint("🔊 Play audio: $mediaFile");
+                                          debugPrint(
+                                              "🔊 Play audio: $mediaFile");
                                           // TODO: tích hợp audio player
                                         },
                                       ),
-                                      Text("Nghe audio", style: TextStyle(color: const Color(
-                                          0xFF8DE19F), fontSize: 16, fontWeight: FontWeight.bold)),
+                                      Text("Nghe audio",
+                                          style: TextStyle(
+                                              color: const Color(
+                                                  0xFF8DE19F),
+                                              fontSize: 16,
+                                              fontWeight:
+                                              FontWeight.bold)),
                                     ],
                                   );
                                 }
@@ -434,23 +462,35 @@ class _PracticeScreenState extends State<PracticeScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
+                      // BẮT ĐẦU: Logic đã được chỉnh sửa để lọc các đáp án rỗng
                       ...() {
                         final q = _questions[_current];
-                        final options = [
+
+                        // Khởi tạo tất cả tùy chọn
+                        final allOptions = [
                           MapEntry('A', q['ansa']?.toString() ?? ""),
                           MapEntry('B', q['ansb']?.toString() ?? ""),
                           MapEntry('C', q['ansc']?.toString() ?? ""),
                           MapEntry('D', q['ansd']?.toString() ?? ""),
                         ];
+
+                        // LỌC: Chỉ giữ lại các tùy chọn có nội dung (không rỗng sau khi trim)
+                        final optionsToShow = allOptions
+                            .where((e) => e.value.trim().isNotEmpty)
+                            .toList();
+
                         final right = (q['ansright'] ?? '').toString().toUpperCase();
                         final chosen = (_answers[_current] ?? '').toUpperCase();
                         final reveal = _submitted || _remaining == 0;
-                        return options.map((e) {
+
+                        // Mapping các tùy chọn đã lọc sang Widget _optionTile
+                        return optionsToShow.map((e) {
                           final selected = chosen == e.key;
                           final isCorrect = right == e.key;
                           return _optionTile(e.key, e.value, selected, reveal, isCorrect);
                         }).toList();
                       }(),
+                      // KẾT THÚC: Logic đã được chỉnh sửa
                     ],
                   ),
                 ),
@@ -487,11 +527,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _goTo(_current - 1),
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    label: const Text("Trước", style: TextStyle(color: Colors.white)),
+                    label:
+                    const Text("Trước", style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF77DD77),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
@@ -506,7 +548,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF77DD77),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
@@ -526,10 +569,14 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   backgroundColor: const Color(0xFFDD3434),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
-                child: Text("Hoàn thành bài thi", style: TextStyle(color: const Color(
-                    0xFFFFFFFF).withOpacity(0.9), fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text("Hoàn thành bài thi",
+                    style: TextStyle(
+                        color: const Color(0xFFFFFFFF).withOpacity(0.9),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
               ),
             ),
           )

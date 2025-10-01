@@ -29,12 +29,36 @@ class _QuestionScreenState extends State<QuestionScreen> {
     loadQuestions();
   }
 
+  // Chỉnh sửa: Thêm logic lọc câu hỏi không hợp lệ
   Future<void> loadQuestions() async {
     try {
-      final data = await dbHelper.getQuestionsByTopic(widget.topicId);
+      final rawData = await dbHelper.getQuestionsByTopic(widget.topicId);
+
+      // Lọc câu hỏi: chỉ giữ lại những câu có nội dung VÀ có ít nhất một đáp án
+      final validQuestions = rawData.where((q) {
+        // 1. Kiểm tra nội dung câu hỏi
+        final questionTextExists = (q['content']?.toString().trim().isNotEmpty == true) ||
+            (q['title']?.toString().trim().isNotEmpty == true);
+
+        // 2. Kiểm tra ít nhất một đáp án (A, B, C, D) có tồn tại
+        final optionsExist = (q['ansa']?.toString().trim().isNotEmpty == true) ||
+            (q['ansb']?.toString().trim().isNotEmpty == true) ||
+            (q['ansc']?.toString().trim().isNotEmpty == true) ||
+            (q['ansd']?.toString().trim().isNotEmpty == true);
+
+        // Chỉ giữ lại câu hỏi hợp lệ
+        return questionTextExists && optionsExist;
+      }).toList();
+
       setState(() {
-        questions = data;
+        questions = validQuestions;
         isLoading = false;
+        // Đảm bảo currentIndex không vượt quá giới hạn mới
+        if (currentIndex >= questions.length && questions.isNotEmpty) {
+          currentIndex = questions.length - 1;
+        } else if (questions.isEmpty) {
+          currentIndex = 0;
+        }
       });
     } catch (e) {
       debugPrint("❌ Lỗi khi load questions: $e");
@@ -111,9 +135,13 @@ class _QuestionScreenState extends State<QuestionScreen> {
       return Scaffold(
         appBar: AppBar(title: Text(widget.topicName)),
         body: const Center(
-          child: Text(
-            "⚠️ Chủ đề này chưa có câu hỏi",
-            style: TextStyle(fontSize: 18, color: Colors.red),
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Text(
+              "⚠️ Chủ đề này chưa có câu hỏi hợp lệ (đã lọc bỏ các câu không có nội dung hoặc đáp án).",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, color: Colors.red),
+            ),
           ),
         ),
       );
@@ -134,11 +162,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
     final isMandatory = question['mandatory'] == 1;
 
-    final options = {
-      'A': question['ansa'] ?? "",
-      'B': question['ansb'] ?? "",
-      'C': question['ansc'] ?? "",
-      'D': question['ansd'] ?? "",
+    // Danh sách các tùy chọn đáp án (đã trim)
+    final Map<String, String> allOptions = {
+      'A': question['ansa']?.toString().trim() ?? "",
+      'B': question['ansb']?.toString().trim() ?? "",
+      'C': question['ansc']?.toString().trim() ?? "",
+      'D': question['ansd']?.toString().trim() ?? "",
     };
 
     return Scaffold(
@@ -236,8 +265,8 @@ class _QuestionScreenState extends State<QuestionScreen> {
             const SizedBox(height: 20),
           ],
 
-          /// Các đáp án
-          ...options.entries.map((entry) {
+          /// Các đáp án (Đã lọc bỏ đáp án rỗng)
+          ...allOptions.entries.where((entry) => entry.value.isNotEmpty).map((entry) {
             final opt = entry.key;
             final text = entry.value;
             final isChosen = selectedOption == opt;

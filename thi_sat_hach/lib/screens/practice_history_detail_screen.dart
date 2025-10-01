@@ -36,7 +36,24 @@ class _PracticeHistoryDetailScreenState
   /// Hàm lấy chi tiết bài thi từ DB
   Future<void> _loadDetails() async {
     try {
-      final data = await DBHelper.instance.getExamDetail(widget.examId);
+      // Dùng hàm getExamDetail của bạn
+      final rawData = await DBHelper.instance.getExamDetail(widget.examId);
+
+      // Lọc bỏ những câu hỏi không có nội dung hoặc không có đáp án nào được nhập
+      final data = rawData.where((q) {
+        // Kiểm tra nội dung câu hỏi có tồn tại không
+        final questionTextExists = (q['question_content']?.toString().trim().isNotEmpty == true) ||
+            (q['question_title']?.toString().trim().isNotEmpty == true);
+
+        // Kiểm tra ít nhất một đáp án (A, B, C, D) có tồn tại không
+        final optionsExist = (q['option_a']?.toString().trim().isNotEmpty == true) ||
+            (q['option_b']?.toString().trim().isNotEmpty == true) ||
+            (q['option_c']?.toString().trim().isNotEmpty == true) ||
+            (q['option_d']?.toString().trim().isNotEmpty == true);
+
+        // Chỉ giữ lại câu hỏi có nội dung VÀ có ít nhất một đáp án
+        return questionTextExists && optionsExist;
+      }).toList();
 
       int score = 0;
       int total = 0;
@@ -47,7 +64,7 @@ class _PracticeHistoryDetailScreenState
         score = data.where((q) => (q['is_correct'] as int? ?? 0) == 1).length;
         total = data.length;
         // Lấy ngày tạo từ bản ghi đầu tiên
-        createdAt = data.first['created_at']?.toString() ?? "";
+        createdAt = rawData.first['created_at']?.toString() ?? "";
       }
 
       setState(() {
@@ -78,6 +95,7 @@ class _PracticeHistoryDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Tính lại phần trăm dựa trên tổng số câu hỏi đã lọc
     final double percent = (_total > 0) ? (_score / _total) * 100 : 0;
 
     return Scaffold(
@@ -89,7 +107,15 @@ class _PracticeHistoryDetailScreenState
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _details.isEmpty
-          ? const Center(child: Text("📭 Không có dữ liệu chi tiết"))
+          ? const Center(
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Text(
+              "📭 Không có dữ liệu chi tiết hợp lệ. Các câu hỏi không có đáp án đã được lọc bỏ.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ))
           : Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -138,29 +164,29 @@ class _PracticeHistoryDetailScreenState
                 final q = _details[index];
                 final isCorrect = (q['is_correct'] as int? ?? 0) == 1;
 
-                // Lấy nội dung câu hỏi (tùy DB trường nào có dữ liệu)
+                // Lấy nội dung câu hỏi
                 final questionText = q['question_content']?.toString() ??
                     q['question_title']?.toString() ??
                     q['user_content']?.toString() ??
                     '';
 
-                // Lấy đáp án đúng (ưu tiên correct_answer, nếu trống thì lấy ansright)
-                final correctAnswer =
-                q['correct_answer']?.toString().trim().isNotEmpty == true
+                // Lấy đáp án đúng (đã trim để so sánh an toàn hơn)
+                final String correctAnswerTrimmed =
+                (q['correct_answer']?.toString().trim().isNotEmpty == true
                     ? q['correct_answer'].toString()
-                    : q['ansright']?.toString() ?? '';
+                    : q['ansright']?.toString() ?? '').trim();
 
-                final userAnswer = q['user_answer']?.toString() ?? '';
+                final String userAnswerTrimmed = q['user_answer']?.toString().trim() ?? '';
                 final hint = q['anshint']?.toString() ?? '';
 
-                // Lấy 4 lựa chọn (lọc bỏ null và chuỗi rỗng)
-                final options = [
-                  q['option_a'],
-                  q['option_b'],
-                  q['option_c'],
-                  q['option_d'],
+                // Lấy 4 lựa chọn, chuyển thành String, trim và lọc bỏ những cái rỗng
+                final List<String> options = [
+                  q['option_a']?.toString().trim() ?? '',
+                  q['option_b']?.toString().trim() ?? '',
+                  q['option_c']?.toString().trim() ?? '',
+                  q['option_d']?.toString().trim() ?? '',
                 ]
-                    .where((o) => o != null && o.toString().trim().isNotEmpty)
+                    .where((o) => o.isNotEmpty)
                     .toList();
 
                 return Card(
@@ -196,16 +222,18 @@ class _PracticeHistoryDetailScreenState
                         ),
                         const SizedBox(height: 8),
 
-                        // 🔹 Các lựa chọn A, B, C, D
+                        // 🔹 Các lựa chọn A, B, C, D (Chỉ hiển thị những đáp án không rỗng)
                         if (options.isNotEmpty) ...[
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: List.generate(options.length, (i) {
                               final letter = String.fromCharCode(65 + i); // A/B/C/D
-                              final optionText = options[i].toString();
+                              final optionText = options[i]; // Đã được trim
 
-                              final isUserPick = optionText == userAnswer;
-                              final isAnswer = optionText == correctAnswer;
+                              // So sánh: đáp án user chọn (đã trim) có khớp với option đang xét không
+                              final isUserPick = optionText == userAnswerTrimmed;
+                              // So sánh: option đang xét có phải là đáp án đúng không
+                              final isAnswer = optionText == correctAnswerTrimmed;
 
                               // Nền màu: xanh nhạt cho đáp án đúng, đỏ nhạt cho đáp án sai mà user chọn
                               Color bg = Colors.transparent;
@@ -234,9 +262,9 @@ class _PracticeHistoryDetailScreenState
                         ],
 
                         // 🔹 Luôn hiển thị đáp án đúng
-                        if (correctAnswer.isNotEmpty) ...[
+                        if (correctAnswerTrimmed.isNotEmpty) ...[
                           Text(
-                            "👉 Đáp án đúng: $correctAnswer",
+                            "👉 Đáp án đúng: ${correctAnswerTrimmed}", // Hiển thị đáp án đã trim
                             style: const TextStyle(
                                 color: Colors.green,
                                 fontWeight: FontWeight.bold),

@@ -1,4 +1,3 @@
-// Thay thế toàn bộ code trong file register_screen.dart của bạn bằng code dưới đây
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -76,33 +75,52 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final exists = await DBHelper.instance.rawQuery(
+      // 1. KIỂM TRA TÊN ĐĂNG NHẬP ĐÃ TỒN TẠI
+      final usernameExists = await DBHelper.instance.rawQuery(
         "SELECT id FROM users WHERE username = ?",
         [username],
       );
 
-      if (exists.isNotEmpty) {
+      if (usernameExists.isNotEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("❌ Tên đăng nhập đã tồn tại")),
           );
         }
-      } else {
-        await DBHelper.instance.insert("users", {
-          "username": username,
-          "password": password,
-          "fullname": fullname,
-          "email": email,
-        });
-
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("🎉 Đăng ký thành công!")),
-        );
-
-        Navigator.pushReplacementNamed(context, '/login');
+        return;
       }
+
+      // 2. KIỂM TRA EMAIL ĐÃ TỒN TẠI (Đã thêm)
+      final emailExists = await DBHelper.instance.rawQuery(
+        "SELECT id FROM users WHERE email = ?",
+        [email],
+      );
+
+      if (emailExists.isNotEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("❌ Email này đã được đăng ký")),
+          );
+        }
+        return;
+      }
+
+      // 3. THỰC HIỆN ĐĂNG KÝ
+      await DBHelper.instance.insert("users", {
+        "username": username,
+        "password": password,
+        "fullname": fullname,
+        "email": email,
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("🎉 Đăng ký thành công!")),
+      );
+
+      Navigator.pushReplacementNamed(context, '/login');
+
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -309,6 +327,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     borderSide: BorderSide.none,
                                   ),
                                 ),
+                                // ĐÃ CẬP NHẬT: Thêm validator cho định dạng Email và kiểm tra rỗng
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return "Vui lòng nhập Email";
+                                  }
+                                  // Kiểm tra định dạng Email cơ bản
+                                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                                    return "Email không hợp lệ";
+                                  }
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 30),
                               SizedBox(

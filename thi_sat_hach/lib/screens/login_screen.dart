@@ -14,7 +14,8 @@ class _LoginScreenState extends State<LoginScreen> {
   // GlobalKey dùng để xác thực Form
   final _formKey = GlobalKey<FormState>();
   // Controllers để quản lý dữ liệu trong các trường nhập liệu
-  final _usernameController = TextEditingController();
+  // Đã đổi từ _usernameController sang _emailController
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   // Biến cờ để ẩn/hiện mật khẩu
   bool _obscurePwd = true;
@@ -27,7 +28,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     // Lấy dữ liệu từ controllers và loại bỏ khoảng trắng thừa
-    final username = _usernameController.text.trim();
+    // Đã đổi từ username sang email
+    final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     // Cập nhật trạng thái isLoading để hiển thị vòng xoay
@@ -36,9 +38,9 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // Thực hiện truy vấn cơ sở dữ liệu để tìm người dùng
       final result = await DBHelper.instance.rawQuery(
-        // Lệnh SQL để tìm người dùng với username và password tương ứng
-        "SELECT * FROM users WHERE username = ? AND password = ? LIMIT 1",
-        [username, password],
+        // Lệnh SQL đã được sửa: tìm người dùng với email và password tương ứng
+        "SELECT * FROM users WHERE email = ? AND password = ? LIMIT 1",
+        [email, password],
       );
 
       // Nếu tìm thấy người dùng (kết quả không rỗng)
@@ -57,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         // Nếu không tìm thấy, hiển thị thông báo lỗi
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("❌ Sai tên đăng nhập hoặc mật khẩu")),
+          const SnackBar(content: Text("❌ Sai email hoặc mật khẩu")), // Sửa thông báo lỗi
         );
       }
     } finally {
@@ -114,11 +116,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      // Trường nhập liệu tên đăng nhập
+                      // Trường nhập liệu email
                       TextFormField(
-                        controller: _usernameController,
-                        validator: (v) => v!.isEmpty ? "Nhập tên đăng nhập" : null,
-                        decoration: _inputDecoration("Tên đăng nhập", Icons.person),
+                        controller: _emailController,
+                        // Thêm keyboardType là email để tối ưu bàn phím
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) {
+                          if (v!.isEmpty) {
+                            return "Nhập email";
+                          }
+                          // Thêm validation cơ bản cho định dạng email
+                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) {
+                            return "Email không hợp lệ";
+                          }
+                          return null;
+                        },
+                        // Đã sửa nhãn và icon cho trường email
+                        decoration: _inputDecoration("Email", Icons.email),
                       ),
                       const SizedBox(height: 16),
                       // Trường nhập liệu mật khẩu

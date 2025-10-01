@@ -69,7 +69,9 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
     showDialog(
       context: context,
       builder: (context) {
+        // Truyền giá trị hiện tại của mật khẩu mới vào dialog
         return PasswordGeneratorDialog(
+          initialPassword: _passwordController.text,
           onPasswordGenerated: (password) {
             _passwordController.text = password;
             _confirmController.text = password;
@@ -307,11 +309,16 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   }
 }
 
-// ✅ Widget mới cho hộp thoại tạo mật khẩu
+// <h2>Chỉnh sửa tại đây: PasswordGeneratorDialog</h2>
 class PasswordGeneratorDialog extends StatefulWidget {
   final Function(String) onPasswordGenerated;
+  final String initialPassword; // Thêm biến để nhận mật khẩu hiện tại (tùy chọn)
 
-  const PasswordGeneratorDialog({super.key, required this.onPasswordGenerated});
+  const PasswordGeneratorDialog({
+    super.key,
+    required this.onPasswordGenerated,
+    this.initialPassword = '',
+  });
 
   @override
   State<PasswordGeneratorDialog> createState() => _PasswordGeneratorDialogState();
@@ -324,11 +331,16 @@ class _PasswordGeneratorDialogState extends State<PasswordGeneratorDialog> {
   bool _includeNumbers = true;
   bool _includeSymbols = true;
   String _generatedPassword = '';
+  // THÊM BIẾN THEO DÕI TRẠNG THÁI SAO CHÉP
+  bool _isCopied = false;
 
   @override
   void initState() {
     super.initState();
+    // Khởi tạo mật khẩu ngẫu nhiên mới, bỏ qua mật khẩu cũ
     _generatePassword();
+    // Nếu người dùng đóng dialog và mở lại, trạng thái copied sẽ được reset
+    _isCopied = false;
   }
 
   void _generatePassword() {
@@ -352,7 +364,22 @@ class _PasswordGeneratorDialogState extends State<PasswordGeneratorDialog> {
     for (int i = 0; i < _length; i++) {
       password += chars[rnd.nextInt(chars.length)];
     }
-    setState(() => _generatedPassword = password);
+    setState(() {
+      _generatedPassword = password;
+      // Khi tạo mật khẩu mới, reset trạng thái sao chép
+      _isCopied = false;
+    });
+  }
+
+  // Phương thức xử lý sao chép
+  void _handleCopy() {
+    FlutterClipboard.copy(_generatedPassword);
+    setState(() {
+      _isCopied = true; // Đánh dấu đã sao chép
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("✅ Đã sao chép mật khẩu. Bây giờ bạn có thể sử dụng.")),
+    );
   }
 
   @override
@@ -373,16 +400,19 @@ class _PasswordGeneratorDialogState extends State<PasswordGeneratorDialog> {
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.copy),
-                  onPressed: () {
-                    FlutterClipboard.copy(_generatedPassword);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Đã sao chép mật khẩu")),
-                    );
-                  },
+                  onPressed: _handleCopy, // Gọi phương thức xử lý sao chép
                 ),
               ),
             ),
             const SizedBox(height: 10),
+            // HIỂN THỊ CẢNH BÁO NẾU CHƯA SAO CHÉP
+            if (!_isCopied)
+              const Text(
+                "⚠️ Vui lòng bấm sao chép để có thể sử dụng mật khẩu này.",
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            const SizedBox(height: 10),
+            // KẾT THÚC CẢNH BÁO
             Row(
               children: [
                 Expanded(
@@ -471,7 +501,8 @@ class _PasswordGeneratorDialogState extends State<PasswordGeneratorDialog> {
           child: const Text("Hủy"),
         ),
         ElevatedButton(
-          onPressed: () => widget.onPasswordGenerated(_generatedPassword),
+          // VÔ HIỆU HÓA NÚT NẾU CHƯA SAO CHÉP
+          onPressed: _isCopied ? () => widget.onPasswordGenerated(_generatedPassword) : null,
           child: const Text("Sử dụng mật khẩu"),
         ),
       ],
