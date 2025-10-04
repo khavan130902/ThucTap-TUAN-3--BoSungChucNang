@@ -16,7 +16,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
   bool _submitted = false;
   int _current = 0;
 
-  static const int totalSeconds = 30 * 60;
+  // ĐÃ SỬA: 22 phút (22 * 60 = 1320 giây)
+  static const int totalSeconds = 22 * 60;
   int _remaining = totalSeconds;
   Timer? _timer;
 
@@ -55,7 +56,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
     setState(() => _isLoading = true);
     try {
       final data = await DBHelper.instance
-          .rawQuery("SELECT * FROM question ORDER BY RANDOM() LIMIT 30");
+      // ĐÃ SỬA: Lấy 35 câu hỏi
+          .rawQuery("SELECT * FROM question ORDER BY RANDOM() LIMIT 35");
       _questions = data;
       _answers = List<String?>.filled(_questions.length, null);
       _startTimer();
